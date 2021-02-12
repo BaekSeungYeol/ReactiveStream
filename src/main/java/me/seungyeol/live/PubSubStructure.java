@@ -13,7 +13,7 @@ public class PubSubStructure {
     public static void main(String[] args) throws InterruptedException {
         // Publisher = Observable
         // Subscriber  <- Observer
-
+        //
         Iterable<Integer> iter = Arrays.asList(1,2,3,4,5);
         ExecutorService es = Executors.newSingleThreadExecutor();
 
