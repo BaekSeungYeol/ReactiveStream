@@ -44,7 +44,7 @@ public class Ob {
         Observer ob = new Observer() {
             @Override
             public void update(Observable o, Object arg) {
-                System.out.println(Thread.currentThread() + " " + arg);
+                System.out.println(Thread.currentThread() + "    " + arg);
             }
         };
 
