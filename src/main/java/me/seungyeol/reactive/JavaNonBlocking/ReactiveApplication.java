@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.context.request.async.DeferredResult;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -42,12 +43,12 @@ public class ReactiveApplication {
         public DeferredResult<String> rest(int idx) {
             DeferredResult<String> dr = new DeferredResult<>();
 
-            Completion
-                    .from(rt.getForEntity(URL1, String.class, "h" + idx))
-                    .andApply(s -> rt.getForEntity(URL2, String.class, s.getBody()))
-                    .andApply(s -> myService.work(s.getBody()))
-                    .andError(e -> dr.setErrorResult(e.toString()))
-                    .andAccept(s -> dr.setResult(s));
+//            Completion
+//                    .from(rt.getForEntity(URL1, String.class, "h" + idx))
+//                    .andApply(s -> rt.getForEntity(URL2, String.class, s.getBody()))
+//                    .andApply(s -> myService.work(s.getBody()))
+//                    .andError(e -> dr.setErrorResult(e.toString()))
+//                    .andAccept(s -> dr.setResult(s));
 
 
 //            ListenableFuture<ResponseEntity<String>> f1 = rt.getForEntity(URL1, String.class, "h" + idx);
@@ -70,7 +71,22 @@ public class ReactiveApplication {
 //               dr.setErrorResult(e.getMessage());
 //            });
 
+            //CompletableFuture<ResponseEntity<String>> f = toCF(rt.getForEntity(URL1, String.class, "h" + idx));
+            toCF(rt.getForEntity(URL1, String.class, "h" + idx))
+                    .thenCompose(s -> {
+                        if (1 == 1) throw new RuntimeException("ERROR");
+                        return toCF(rt.getForEntity(URL2, String.class, s.getBody()));
+                    })
+                    .thenApplyAsync(s2 -> (myService.work(s2.getBody())))
+                    .thenAccept(s3 -> dr.setResult(s3))
+                    .exceptionally(e -> { dr.setErrorResult(e.getMessage()); return (Void)null;});
             return dr;
+        }
+
+        <T> CompletableFuture<T> toCF(ListenableFuture<T> lf) {
+            CompletableFuture<T> cf = new CompletableFuture<>();
+            lf.addCallback(s-> cf.complete(s), e->cf.completeExceptionally(e));
+            return cf;
         }
 
         public static class AcceptCompletion<S> extends Completion<S,Void> {
@@ -162,9 +178,13 @@ public class ReactiveApplication {
 
         @Service
         public static class MyService {
-            @Async
-            public ListenableFuture<String> work(String req) {
-                return new AsyncResult<>(req + "/asyncwork");
+//            @Async
+//            public ListenableFuture<String> work(String req) {
+//                return new AsyncResult<>(req + "/asyncwork");
+//            }
+
+            public String work(String req) {
+                return req + "/asyncwork";
             }
         }
     }
