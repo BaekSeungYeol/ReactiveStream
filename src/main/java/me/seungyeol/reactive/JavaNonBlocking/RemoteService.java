@@ -1,6 +1,5 @@
-package me.seungyeol.reactive;
+package me.seungyeol.reactive.JavaNonBlocking;
 
-import lombok.Getter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +12,7 @@ public class RemoteService {
         @GetMapping("/service")
         public String service(String req) throws InterruptedException {
             Thread.sleep(2000);
+//            throw new RuntimeException();
             return req + "/service1";
         }
 

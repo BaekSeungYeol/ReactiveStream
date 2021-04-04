@@ -1,4 +1,4 @@
-package me.seungyeol.reactive;
+package me.seungyeol.reactive.JavaNonBlocking;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StopWatch;
