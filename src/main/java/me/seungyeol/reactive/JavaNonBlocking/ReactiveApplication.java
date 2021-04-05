@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.Netty4ClientHttpRequestFactory;
@@ -18,6 +19,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -29,19 +33,19 @@ import java.util.function.Function;
 @EnableAsync
 public class ReactiveApplication {
 
+
+
+    static final String URL1 = "http://localhost:8081/service?req={req}";
+    static final String URL2 = "http://localhost:8081/service2?req={req}";
+
+
     @RestController
     public static class MyController {
-        AsyncRestTemplate rt = new AsyncRestTemplate(new Netty4ClientHttpRequestFactory(new NioEventLoopGroup(1)));
-
         @Autowired MyService myService;
 
-        static final String URL1 = "http://localhost:8081/service?req={req}";
-        static final String URL2 = "http://localhost:8081/service2?req={req}";
-
-
-        @GetMapping("/rest")
-        public DeferredResult<String> rest(int idx) {
-            DeferredResult<String> dr = new DeferredResult<>();
+//        @GetMapping("/rest")
+//        public DeferredResult<String> rest(int idx) {
+//            DeferredResult<String> dr = new DeferredResult<>();
 
 //            Completion
 //                    .from(rt.getForEntity(URL1, String.class, "h" + idx))
@@ -72,22 +76,87 @@ public class ReactiveApplication {
 //            });
 
             //CompletableFuture<ResponseEntity<String>> f = toCF(rt.getForEntity(URL1, String.class, "h" + idx));
-            toCF(rt.getForEntity(URL1, String.class, "h" + idx))
-                    .thenCompose(s -> {
-                        if (1 == 1) throw new RuntimeException("ERROR");
-                        return toCF(rt.getForEntity(URL2, String.class, s.getBody()));
-                    })
-                    .thenApplyAsync(s2 -> (myService.work(s2.getBody())))
-                    .thenAccept(s3 -> dr.setResult(s3))
-                    .exceptionally(e -> { dr.setErrorResult(e.getMessage()); return (Void)null;});
-            return dr;
+
+//            toCF(rt.getForEntity(URL1, String.class, "h" + idx))
+//                    .thenCompose(s -> {
+//                        if (1 == 1) throw new RuntimeException("ERROR");
+//                        return toCF(rt.getForEntity(URL2, String.class, s.getBody()));
+//                    })
+//                    .thenApplyAsync(s2 -> (myService.work(s2.getBody())))
+//                    .thenAccept(s3 -> dr.setResult(s3))
+//                    .exceptionally(e -> { dr.setErrorResult(e.getMessage()); return null;});
+
+//            return dr;
+//        }
+
+        //Spring 5.0
+
+
+
+        WebClient client = WebClient.create();
+        @GetMapping("/rest")
+        public Mono<String> rest(int idx) {
+//            String s = "HI";
+//            Mono<String> s2 = Mono.just("HI");
+
+            Mono<String> bef = client.get().uri(URL1,idx).exchange() // Mono<ClientResponse>
+                    .flatMap(c -> c.bodyToMono(String.class)) // Mono<String>
+                    .flatMap((String res1) -> client.get().uri(URL2,res1).exchange()) // Mono<ClientResponse>
+                    .flatMap(c -> c.bodyToMono(String.class)) // Mono<String>
+                     .doOnNext(c -> log.info("The2:" + c.toString()))
+                    .flatMap(res2 -> Mono.fromCompletionStage(myService.work(res2)))
+                      .doOnNext(c -> log.info("The3: " + c.toString()));
+            return bef;
+
+
+//            Mono<String> body = client.get().uri(URL1, idx)
+//                    .exchangeToMono(c -> c.bodyToMono(String.class))
+//                    .doOnNext(c -> log.info("The:" + c.toString()))
+//                    .flatMap((String res1) -> client.get().uri(URL2, res1)
+//                            .exchangeToMono(c -> c.bodyToMono(String.class)))
+//                    .doOnNext(c -> log.info("The2:" + c.toString()))
+//                    .flatMap((res2 -> Mono.fromCompletionStage(myService.work(res2)))) // Mono<String>
+//                                    // COmpletableFuture<String> -> Mono<String>
+//                    .doOnNext(c -> log.info("The3: " + c.toString()));
+//
+//            return body;
+        }
+        @GetMapping("/rest2")
+        public Mono<String> rest2(int mymy) {
+            Mono<String> body = client.get().uri(URL1, mymy)
+                    .exchangeToMono(c -> c.bodyToMono(String.class))
+                    .doOnNext(c -> log.info("The:" + c.toString()))
+                    .flatMap((String res1) -> client.get().uri(URL2, res1)
+                            .exchangeToMono(c -> c.bodyToMono(String.class)))
+                    .doOnNext(c -> log.info("The2:" + c.toString()))
+                    .flatMap((res2 -> Mono.fromCompletionStage(myService.work(res2)))) // Mono<String>
+                                    // COmpletableFuture<String> -> Mono<String>
+                    .doOnNext(c -> log.info("The3: " + c.toString()));
+
+            return body;
         }
 
-        <T> CompletableFuture<T> toCF(ListenableFuture<T> lf) {
-            CompletableFuture<T> cf = new CompletableFuture<>();
-            lf.addCallback(s-> cf.complete(s), e->cf.completeExceptionally(e));
-            return cf;
+        public static void main(String[] args) {
+            SpringApplication.run(ReactiveApplication.class, args);
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        <T> CompletableFuture<T> toCF(ListenableFuture<T> lf) {
+//            CompletableFuture<T> cf = new CompletableFuture<>();
+//            lf.addCallback(s-> cf.complete(s), e->cf.completeExceptionally(e));
+//            return cf;
+//        }
 
         public static class AcceptCompletion<S> extends Completion<S,Void> {
             public Consumer<S> con;
@@ -183,8 +252,9 @@ public class ReactiveApplication {
 //                return new AsyncResult<>(req + "/asyncwork");
 //            }
 
-            public String work(String req) {
-                return req + "/asyncwork";
+            @Async
+            public CompletableFuture<String> work(String req)  {
+                return CompletableFuture.completedFuture(req + "/asyncwork");
             }
         }
     }
@@ -197,8 +267,5 @@ public class ReactiveApplication {
         return te;
     }
 
-    public static void main(String[] args) {
-        SpringApplication.run(ReactiveApplication.class, args);
-    }
 
 }
