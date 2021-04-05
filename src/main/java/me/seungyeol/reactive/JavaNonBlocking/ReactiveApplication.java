@@ -107,20 +107,8 @@ public class ReactiveApplication {
                     .flatMap(res2 -> Mono.fromCompletionStage(myService.work(res2)))
                       .doOnNext(c -> log.info("The3: " + c.toString()));
             return bef;
-
-
-//            Mono<String> body = client.get().uri(URL1, idx)
-//                    .exchangeToMono(c -> c.bodyToMono(String.class))
-//                    .doOnNext(c -> log.info("The:" + c.toString()))
-//                    .flatMap((String res1) -> client.get().uri(URL2, res1)
-//                            .exchangeToMono(c -> c.bodyToMono(String.class)))
-//                    .doOnNext(c -> log.info("The2:" + c.toString()))
-//                    .flatMap((res2 -> Mono.fromCompletionStage(myService.work(res2)))) // Mono<String>
-//                                    // COmpletableFuture<String> -> Mono<String>
-//                    .doOnNext(c -> log.info("The3: " + c.toString()));
-//
-//            return body;
         }
+
         @GetMapping("/rest2")
         public Mono<String> rest2(int mymy) {
             Mono<String> body = client.get().uri(URL1, mymy)
