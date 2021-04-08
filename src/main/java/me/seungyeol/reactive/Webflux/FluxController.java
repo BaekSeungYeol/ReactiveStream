@@ -1,4 +1,4 @@
-package whitewin.whitewin013;
+package me.seungyeol.reactive.Webflux;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -79,9 +79,9 @@ public class FluxController {
         Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
         return Flux.zip(es,interval).map(tu -> new Event(tu.getT2(),tu.getT1())).take(10);
 
-
-
     }
+
+
 
     @Data @AllArgsConstructor
     public static class Event {
