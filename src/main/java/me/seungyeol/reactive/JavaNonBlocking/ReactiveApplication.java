@@ -1,25 +1,17 @@
 package me.seungyeol.reactive.JavaNonBlocking;
 
-import io.netty.channel.nio.NioEventLoopGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.Netty4ClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.AsyncRestTemplate;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -121,10 +113,21 @@ public class ReactiveApplication {
                                     // COmpletableFuture<String> -> Mono<String>
                     .doOnNext(c -> log.info("The3: " + c.toString()));
 
+//
+//         client.get().uri(URL1).exchangeToMono(c -> c.bodyToMono(String.class))
+//                    .flatMap(Alice -> client.get().uri(URL2).exchangeToMono(c -> c.bodyToMono(String.class)).map(b -> Alice + " " + b));
+//
+//
+//            Mono<String> Alice = client.get().uri(URL1).exchangeToMono(c -> c.bodyToMono(String.class));
+//            Mono<String> Bob = client.get().uri(URL2).exchangeToMono(c -> c.bodyToMono(String.class));
+//            Flux.zip(Alice,Bob).map(tu -> tu.getT1() + " " + tu.getT2());
+
+
             return body;
         }
 
         public static void main(String[] args) {
+
             SpringApplication.run(ReactiveApplication.class, args);
         }
 
