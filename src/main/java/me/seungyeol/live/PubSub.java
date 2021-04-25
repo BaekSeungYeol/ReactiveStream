@@ -26,10 +26,11 @@ import java.util.stream.Stream;
 public class PubSub {
     public static void main(String[] args) {
         Publisher<Integer> pub = iterPub(Stream.iterate(1, a -> a +1).limit(10).collect(Collectors.toList()));
-        //Publisher<Integer> mapPub = mapPub(pub,  s -> s * 10);
+        pub.subscribe(LogSub());
+        Publisher<Integer> mapPub = mapPub(pub,  s -> s * 10);
         //Publisher<Integer> sumPub = sumPub(pub);
-        Publisher<Integer> reducePub = reducePub(pub,0,(a, b)-> a+b);
-        reducePub.subscribe(LogSub());
+//        Publisher<Integer> reducePub = reducePub(mapPub,0,(a, b)-> a+b);
+        //reducePub.subscribe(LogSub());
     }
 
     private static Publisher<Integer> reducePub(Publisher<Integer> pub, int init, BiFunction<Integer, Integer, Integer> bf) {
@@ -128,7 +129,7 @@ public class PubSub {
                             iter.forEach(s -> sub.onNext(s));
                             sub.onComplete();
 
-                        }catch (Throwable t) {
+                        } catch (Throwable t) {
                             sub.onError(t);
                         }
                     }

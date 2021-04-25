@@ -38,6 +38,7 @@ public class PubSubStructure {
                             } catch (RuntimeException e) {
                                 subscriber.onError(e);
                             }
+
                         });
 
                     }

@@ -3,7 +3,11 @@ package me.seungyeol.reactive.Webflux;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -11,15 +15,31 @@ import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 @SpringBootTest
+@AutoConfigureWebTestClient
 class FluxControllerTest {
+    @Autowired
+    WebTestClient webTestClient;
+
+    WebTestClient client = WebTestClient.bindToController(
+            new FluxController(), new MonoController()
+    ).build();
+
+    @Test
+    void hello() {
+        webTestClient.get().uri("/hello/{name}", "Spring")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .isEqualTo("Hello Spring");
+    }
+
+
+
     @Test
     void expectFooBarComplete() {
-        Flux<String> flux = Flux.just("foo","bar");
+        Flux<String> flux = Flux.just("foo", "bar");
 
         StepVerifier.create(flux)
                 .expectNext("foo")
@@ -29,7 +49,7 @@ class FluxControllerTest {
 
     @Test
     void expectFooBarError() {
-        Flux<String> flux = Flux.just("foo","bar");
+        Flux<String> flux = Flux.just("foo", "bar");
 
         StepVerifier.create(flux)
                 .expectNext("foo")
@@ -71,7 +91,6 @@ class FluxControllerTest {
     }
 
     @Test
-
     void Test() {
         Mono<Integer> integerMono = Mono.<Integer>just(1)
                 .subscribeOn(Schedulers.single());
@@ -84,17 +103,18 @@ class FluxControllerTest {
     @Test
     @DisplayName("parallel 이 없고 빠르지 않다. latency에 있어서 장점이 없는 테스트")
     void test() {
-        Flux.just("a","b","c","d","e","f","g","h","i")
+        Flux.just("a", "b", "c", "d", "e", "f", "g", "h", "i")
                 .window(3)
                 .flatMap(l -> l.map(this::toUpperCase))
                 .doOnNext(System.out::println)
                 .blockLast();
     }
+
     @Test
     @DisplayName("parallel 이 있다.. latency에 있어서 장점이 있는 테스트 + Sequencial 을 유지하는 코드")
     void test2() throws InterruptedException {
         //CountDownLatch countDownLatch = new CountDownLatch(1);
-        Flux.just("a","b","c","d","e","f","g","h","i")
+        Flux.just("a", "b", "c", "d", "e", "f", "g", "h", "i")
                 .window(3)
                 .flatMapSequential(l -> l.map(this::toUpperCase).subscribeOn(Schedulers.parallel()))
                 .doOnNext(System.out::println)
@@ -106,6 +126,7 @@ class FluxControllerTest {
         //countDownLatch.await(5, TimeUnit.SECONDS);
 
     }
+
 
     private List<String> toUpperCase(String s) {
         try {
@@ -132,6 +153,72 @@ class FluxControllerTest {
             return name;
         }
     }
+
+    @Test
+    @DisplayName("flux1는 Delay가 있고 flux2는 Delay가 없는 상황")
+    void test3() {
+        Flux<Long> flux1 = Flux.interval(Duration.ofMillis(100)).take(10);
+        Flux<Long> flux2 = Flux.just(100L,101L,102L);
+
+        flux1.mergeWith(flux2)
+                .doOnNext(System.out::println)
+                .blockLast();
+    }
+    @Test
+    @DisplayName("순서를 지키는 Concat flux1는 Delay가 있고 flux2는 Delay가 없는 상황")
+    void test4() {
+        Flux<Long> flux1 = Flux.interval(Duration.ofMillis(100)).take(10);
+        Flux<Long> flux2 = Flux.just(100L,101L,102L);
+
+        flux1.concatWith(flux2)
+                .doOnNext(System.out::println)
+                .blockLast();
+    }
+
+    @Test
+    @DisplayName("동일한 Mono로 Flux를 만들기")
+    void test5() {
+        Mono<Integer> mono1 = Mono.just(1);
+        Mono<Integer> mono2 = Mono.just(2);
+
+        Flux.concat(mono2,mono1)
+                .doOnNext(System.out::println)
+                .blockLast();
+
+    }
+
+    @Test
+    void reactorMerge() {
+        Flux<Long> flux1 = Flux.interval(Duration.ofMillis(100)).take(10);
+        Flux<Long> flux2 = Flux.just(100L,101L,102L);
+
+        flux1.mergeWith(flux2)
+                .doOnNext(System.out::println)
+                .blockLast();
+    }
+
+
+    @Test
+    void reactorConcat() {
+        Flux<Long> flux1 = Flux.interval(Duration.ofMillis(100)).take(10);
+        Flux<Long> flux2 = Flux.just(100L,101L,102L);
+
+        flux1.concatWith(flux2)
+                .doOnNext(System.out::println)
+                .blockLast();
+    }
+
+    @Test
+    void reactorMono() {
+        Mono<Integer> mono1 = Mono.just(1);
+        Mono<Integer> mono2 = Mono.just(2);
+
+        Flux.concat(mono1, mono2)
+                .doOnNext(System.out::println)
+                .blockLast();
+    }
+
+
 
 
 }

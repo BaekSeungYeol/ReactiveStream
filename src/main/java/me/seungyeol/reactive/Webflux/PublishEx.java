@@ -3,9 +3,12 @@ package me.seungyeol.reactive.Webflux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class PublishEx {
@@ -51,25 +54,41 @@ public class PublishEx {
 //                .log()
 //                .subscribe(s-> System.out.println(s));
 
-        basketFlux.concatMap(basket -> {
-            // basket -> List<String>                   // Flux<String>
-            final Mono<List<String>> distinctFruits = Flux.fromIterable(basket).distinct().collectList();
-            final Mono<Map<String, Long>> countFruitsMono = Flux.fromIterable(basket)
-                    .groupBy(fruit -> fruit) // 바구니로 부터 넘어온 과일 기준으로 group을 묶는다.
-                    .concatMap(groupedFlux -> groupedFlux.count()
-                            .map(count -> {
-                                final Map<String, Long> fruitCount = new LinkedHashMap<>();
-                                fruitCount.put(groupedFlux.key(), count);
-                                return fruitCount;
-                            }) // 각 과일별로 개수를 Map으로 리턴
-                    ) // concatMap으로 순서보장
-                    .reduce((accumulatedMap, currentMap) -> new LinkedHashMap<String, Long>() { {
-                        putAll(accumulatedMap);
-                        putAll(currentMap);
-                    }}); // 그동안 누적된 accumulatedMap에 현재 넘어오는 currentMap을 합쳐서 새로운 Map을 만든다. // map끼리 putAll하여 하나의 Map으로 만든다.
-            return Flux.zip(distinctFruits, countFruitsMono, FruitInfo::new);
-        }).subscribe(System.out::println);
+//        basketFlux.concatMap(basket -> {
+//            // basket -> List<String>                   // Flux<String>
+//            final Mono<List<String>> distinctFruits = Flux.fromIterable(basket).distinct().collectList();
+//            final Mono<Map<String, Long>> countFruitsMono = Flux.fromIterable(basket)
+//                    .groupBy(fruit -> fruit) // 바구니로 부터 넘어온 과일 기준으로 group을 묶는다.
+//                    .concatMap(groupedFlux -> groupedFlux.count()
+//                            .map(count -> {
+//                                final Map<String, Long> fruitCount = new LinkedHashMap<>();
+//                                fruitCount.put(groupedFlux.key(), count);
+//                                return fruitCount;
+//                            }) // 각 과일별로 개수를 Map으로 리턴
+//                    ) // concatMap으로 순서보장
+//                    .reduce((accumulatedMap, currentMap) -> new LinkedHashMap<String, Long>() { {
+//                        putAll(accumulatedMap);
+//                        putAll(currentMap);
+//                    }}); // 그동안 누적된 accumulatedMap에 현재 넘어오는 currentMap을 합쳐서 새로운 Map을 만든다. // map끼리 putAll하여 하나의 Map으로 만든다.
+//            return Flux.zip(distinctFruits, countFruitsMono, FruitInfo::new);
+//        }).subscribe(System.out::println);
 
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        Flux.interval(Duration.ofSeconds(1))
+                .take(5)
+                .publishOn(Schedulers.parallel())
+                .log()
+                .subscribe(System.out::println,
+                        e -> {
+                            System.out.println("error");
+                            countDownLatch.countDown();
+                        },
+                        () -> {
+                            System.out.println("onComplete");
+                            countDownLatch.countDown();
+                        });
+
+        countDownLatch.await(10, TimeUnit.SECONDS);
     }
     static class FruitInfo {
 

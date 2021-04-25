@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -75,10 +76,12 @@ public class FluxController {
 //        return Flux.zip(f, interval).map(tu -> tu.getT1()).take(10);
 
 
-        Flux<String> es = Flux.generate(sink -> sink.next("Value"));
-        Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
-        return Flux.zip(es,interval).map(tu -> new Event(tu.getT2(),tu.getT1())).take(10);
+//        Flux<String> es = Flux.generate(sink -> sink.next("Value"));
+//        Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
+//        return Flux.zip(es,interval).map(tu -> new Event(tu.getT2(),tu.getT1())).take(10);
 
+
+        return null;
     }
 
 
