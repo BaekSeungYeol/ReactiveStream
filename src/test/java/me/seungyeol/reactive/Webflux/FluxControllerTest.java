@@ -14,7 +14,9 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootTest
 @AutoConfigureWebTestClient
@@ -218,7 +220,89 @@ class FluxControllerTest {
                 .blockLast();
     }
 
+    public static class Player {
+        String first,last;
 
+        public Player(String first, String last) {
+            this.first = first;
+            this.last = last;
+        }
+    }
+    @Test
+    void flatMap() {
 
+        Flux<Player> playerFlux = Flux.just("Michael Jordan", "Scottie Pippen", "Steve Kerr")
+                .flatMap(n -> Mono.just(n))
+                .map(p -> {
+                    String[] split = p.split("\\s");
+                    return new Player(split[0], split[1]);
+                })
+                .subscribeOn(Schedulers.parallel());
+
+        List<Player> playerList = Arrays.asList(
+                new Player("Michael", "Jordan"),
+                new Player("Scottie", "Pippen"),
+                new Player("Steve", "Kerr"));
+
+        StepVerifier.create(playerFlux)
+                .expectNextMatches(p -> playerList.contains(p))
+                .expectNextMatches(p -> playerList.contains(p))
+                .expectNextMatches(p -> playerList.contains(p))
+                .verifyComplete();
+    }
+
+    @Test
+    void buffer1() {
+        Flux<String> fruitFlux = Flux.just("apple", "orange", "banana", "kiwi", "strawberry");
+
+        Flux<List<String>> buffer = fruitFlux.buffer(2);
+
+        StepVerifier.create(buffer)
+                .expectNext(Arrays.asList("apple","orange","banana"))
+                .expectNext(Arrays.asList("banana","kiwi"))
+                .expectNext(Arrays.asList("strawberry"))
+                .verifyComplete();
+    }
+    @Test
+    void buffer2() {
+        Flux.just("apple", "orange", "banana", "kiwi", "strawberry")
+                .buffer(3)
+                .flatMap(l -> {
+                    return Flux.fromIterable(l)
+                                    .map(String::toUpperCase)
+                                    .subscribeOn(Schedulers.parallel())
+                                    .log();
+                        }
+                ).subscribe();
+
+    }
+
+    @Test
+    void collectMap() {
+        Flux<String> animalFlux = Flux.just("aardvark", "elephant", "koala", "eagle", "kangaroo");
+
+        Mono<Map<Character, String>> mapMono =
+                animalFlux.collectMap(a -> a.charAt(0));
+
+        StepVerifier.create(mapMono)
+                .expectNextMatches(map -> {
+                    return
+                            map.size() == 3 &&
+                                    map.get('a').equals("aardvark") &&
+                                    map.get('e').equals("eagle") &&
+                                    map.get('k').equals("kangaroo");
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void all() {
+        Flux<String> animalFlux = Flux.just("aardvark", "elephant", "koala", "eagle", "kangaroo");
+
+        Mono<Boolean> hasAMono = animalFlux.all(a -> a.contains("a"));
+        StepVerifier.create(hasAMono)
+                .expectNext(true)
+                .verifyComplete();
+    }
 
 }

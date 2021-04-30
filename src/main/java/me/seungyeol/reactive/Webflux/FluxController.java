@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
@@ -19,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SpringBootApplication
@@ -59,12 +61,11 @@ public class FluxController {
 //                .take(10);
 
 
-
-//        return Flux
-//                .<Event,Long>generate(() -> 1L,(id,sink) -> {
-//                    sink.next(new Event(id,"value" + id));
-//                    return id+1;
-//                })
+//                Flux
+//                .<Event, Long>generate(() -> 1L, (id, sink) -> {
+//                    sink.next(new Event(id, "value" + id));
+//                    return id + 1;
+//                });
 //                .delayElements(Duration.ofSeconds(1))
 //                .take(10);
 
@@ -80,6 +81,8 @@ public class FluxController {
 //        Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
 //        return Flux.zip(es,interval).map(tu -> new Event(tu.getT2(),tu.getT1())).take(10);
 
+        List<Integer> a = List.of(1,2,3,4,5);
+        a.stream().flatMap(i -> Arrays.stream(new Integer[]{i,i,i})).collect(Collectors.toList());
 
         return null;
     }
