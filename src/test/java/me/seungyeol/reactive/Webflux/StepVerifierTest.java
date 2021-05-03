@@ -204,6 +204,16 @@ public class StepVerifierTest {
 //                .switchIfEmpty(fallback);
 //    }
 
+    @Test
+    void all() {
+        Mono<Boolean> mono = Flux.just("ab","ba")
+                .all(word -> word.contains("a"));
+
+        StepVerifier.create(mono)
+                .expectNext(true)
+                .verifyComplete();
+    }
+
 
 
 public class User {
