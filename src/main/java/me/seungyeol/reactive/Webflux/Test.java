@@ -75,6 +75,7 @@ public class Test {
                 .subscribe(s -> System.out.println(s));
 
 
+        System.out.println("Master");
     }
     public static class SimpleSubscriber<T> extends BaseSubscriber<T> {
         @Override
