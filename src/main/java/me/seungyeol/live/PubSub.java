@@ -29,8 +29,8 @@ public class PubSub {
         pub.subscribe(LogSub());
         Publisher<Integer> mapPub = mapPub(pub,  s -> s * 10);
         //Publisher<Integer> sumPub = sumPub(pub);
-//        Publisher<Integer> reducePub = reducePub(mapPub,0,(a, b)-> a+b);
-        //reducePub.subscribe(LogSub());
+        Publisher<Integer> reducePub = reducePub(mapPub,0,(a, b)-> a+b);
+        reducePub.subscribe(LogSub());
     }
 
     private static Publisher<Integer> reducePub(Publisher<Integer> pub, int init, BiFunction<Integer, Integer, Integer> bf) {

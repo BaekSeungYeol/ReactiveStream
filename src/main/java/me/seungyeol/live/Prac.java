@@ -17,16 +17,16 @@ public class Prac {
 
     public static void main(String[] args) {
 
-//        Publisher<Integer> pub = iterPub(Stream.iterate(1, i -> i + 1).limit(10).collect(Collectors.toList()));
-//        Publisher<Integer> newpub = mapPub(pub, (Function<Integer,Integer>)s -> s *10);
-//        Subscriber<Integer> sub = logSub();
+        Publisher<Integer> pub = iterPub(Stream.iterate(1, i -> i + 1).limit(10).collect(Collectors.toList()));
+        Publisher<Integer> newpub = mapPub(pub, (Function<Integer,Integer>)s -> s *10);
+        Subscriber<Integer> sub = logSub();
 //
-//        newpub.subscribe(sub);
+        newpub.subscribe(sub);
 
-        Flux.range(1,10)
-                .map(a -> a*10)
-                .reduce((a,b) -> a+b)
-                .subscribe();
+//        Flux.range(1,10)
+//                .map(a -> a*10)
+//                .reduce((a,b) -> a+b)
+//                .subscribe();
     }
 
     private static Publisher<Integer> mapPub(Publisher<Integer> pub, Function<Integer, Integer> f) {

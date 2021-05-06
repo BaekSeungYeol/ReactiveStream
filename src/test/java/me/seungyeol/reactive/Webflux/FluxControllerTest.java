@@ -107,7 +107,7 @@ class FluxControllerTest {
     void test() {
         Flux.just("a", "b", "c", "d", "e", "f", "g", "h", "i")
                 .window(3)
-                .flatMap(l -> l.map(this::toUpperCase))
+                .flatMap(l -> l.map(this::toUpperCase).subscribeOn(Schedulers.parallel()))
                 .doOnNext(System.out::println)
                 .blockLast();
     }
