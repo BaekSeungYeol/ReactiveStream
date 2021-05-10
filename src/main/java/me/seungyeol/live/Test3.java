@@ -1,31 +1,37 @@
 package me.seungyeol.live;
 
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
-
+@Slf4j
 public class Test3 {
     public static void main(String[] args) throws InterruptedException {
 
-        Flux<Integer> just = Flux.fromIterable(List.of(1,2,3,4,5));
-//        Flux.just(1,2,3,4,5);
+//        Flux<Integer> just = Flux.fromIterable(List.of(1,2,3,4,5));
+////        Flux.just(1,2,3,4,5);
 //        just.map(Test3::anotherTask).subscribeOn(Schedulers.parallel()).log().subscribe();
-        // onNext에서는 기본적으로 같은 스레드들로 처리 된다.
+//        //onNext에서는 기본적으로 같은 스레드들로 처리 된다.
 //        just.map(Test3::anotherTask).log();
-
-
-//        just.flatMap(i -> {
+//
+//
+////        just.flatMap(i -> {
+////            return Flux.just(i).map(Test3::anotherTask).subscribeOn(Schedulers.parallel()).log();
+////        }).subscribe();
+//
+//
+//        just.flatMapSequential(i -> {
 //            return Flux.just(i).map(Test3::anotherTask).subscribeOn(Schedulers.parallel()).log();
-//        }).subscribe();
+//        }).subscribe(s -> System.out.println(s));
 
+        Flux.range(1,5)
+                .map(i -> i *10)
+                .log()
+                .publishOn(Schedulers.newSingle("1"))
+                .subscribe();
 
-        just.flatMapSequential(i -> {
-            return Flux.just(i).map(Test3::anotherTask).subscribeOn(Schedulers.parallel()).log();
-        }).subscribe(s -> System.out.println(s));
-
-        System.out.println("Exit");
-        Thread.sleep(50000L);
+        Thread.sleep(10000L);
     }
 
     public static int anotherTask(int i) {

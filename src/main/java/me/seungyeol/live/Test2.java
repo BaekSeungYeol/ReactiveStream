@@ -4,7 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import reactor.core.publisher.Flux;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -12,6 +14,7 @@ import java.util.function.Function;
 @Slf4j
 public class Test2 {
     public static void main(String[] args) {
+
 
         Publisher<Integer> publisher = new Publisher<>() {
             @Override
