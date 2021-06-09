@@ -1,22 +1,69 @@
 package me.seungyeol.reactive.Webflux;
 
+import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Subscription;
-import reactor.core.Disposable;
-import reactor.core.Exceptions;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.retry.Retry;
 
-import java.time.Duration;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 
+@Slf4j
 public class Test {
+
+    public static Flux<String> temp(String s) {
+        return Flux.just(s);
+    }
     public static void main(String[] args) throws InterruptedException {
 
-//        Flux<String> slow = Flux.just("1", "2").delayElements(Duration.ofSeconds(1));
+
+        for(int i=0; i< 10; ++i) {
+            temp("HI" + i)
+                    .publishOn(Schedulers.boundedElastic())
+                    .map(String::toLowerCase)
+                    .log()
+                    .subscribe(s -> System.out.println());
+        }
+
+//
+//        Flux<Object> log = Flux.generate(synchronousSink -> {
+//            synchronousSink.next(LocalDateTime.now().toString());
+//        })
+//                .log();
+//
+//        log.limitRequest(10).subscribe();
+//        Flux<String> flux = Flux.create((FluxSink<String> sink) -> {
+//            sink.onRequest(request -> {
+//                for (int i = 1; i <= request; i++) {
+//                    sink.next(LocalDateTime.now().toString());
+//                }
+//            });
+//        }).log();
+
+//        flux.limitRequest(50).subscribe(new BaseSubscriber<String>() {
+//            private int count = 0 ;
+//            private final int requestCount = 30;
+//
+//            @Override
+//            protected void hookOnSubscribe(Subscription subscription) {
+//                request(requestCount);
+//            }
+//
+//            @Override
+//            protected void hookOnNext(String value) {
+//                count++;
+//                if(count >= requestCount) {
+//                    count = 0;
+//                    request(requestCount);
+//                }
+//            }
+//        });
+
+        Thread.sleep(30000L);
+        //        Flux<String> slow = Flux.just("1", "2").delayElements(Duration.ofSeconds(1));
 //        Flux<String> fast = Flux.just("1", "2", "3", "4", "5").delayElements(Duration.ofSeconds(2));;
 //
 //        Flux<String> stringFlux = Flux.firstWithSignal(slow, fast).log();
@@ -87,67 +134,68 @@ public class Test {
 //                .log().subscribe();
 //
 //        Thread.sleep(10000L);
-
-        AtomicBoolean isDisposed = new AtomicBoolean();
-        Disposable disposableInstance = new Disposable() {
-            @Override
-            public void dispose() {
-                isDisposed.set(true);
-            }
-
-            @Override
-            public String toString() {
-                return "DISPOSABLE";
-            }
-        };
-
-        Flux.using(() -> disposableInstance,
-                disposable -> Flux.just(disposable.toString()),
-                Disposable::dispose);
-
-        Flux.interval(Duration.ofMillis(250))
-                .map(input -> {
-                    if (input < 3) return "tick " + input;
-                    throw new RuntimeException("boom");
-                })
-                .retry(1)
-                .elapsed()
-                .subscribe(System.out::println, System.err::println);
-
-        Flux<String> flux = Flux
-                .<String>error(new IllegalArgumentException())
-                .doOnError(System.out::println)
-                .retryWhen(Retry.from(companion -> companion.take(3)));
-
-        AtomicInteger errorCount = new AtomicInteger();
-        Flux<String> flux2 =
-                Flux.<String>error(new IllegalArgumentException())
-                        .doOnError(e -> errorCount.incrementAndGet())
-                        .retryWhen(Retry.from(companion -> // (1)
-                                companion.map(rs -> { // (2)
-                                    if (rs.totalRetries() < 3) return rs.totalRetries(); // (3)
-                                    else throw Exceptions.propagate(rs.failure()); // (4)
-                                })
-                        ));
+//
+//        AtomicBoolean isDisposed = new AtomicBoolean();
+//        Disposable disposableInstance = new Disposable() {
+//            @Override
+//            public void dispose() {
+//                isDisposed.set(true);
+//            }
+//
+//            @Override
+//            public String toString() {
+//                return "DISPOSABLE";
+//            }
+//        };
+//
+//        Flux.using(() -> disposableInstance,
+//                disposable -> Flux.just(disposable.toString()),
+//                Disposable::dispose);
+//
+//        Flux.interval(Duration.ofMillis(250))
+//                .map(input -> {
+//                    if (input < 3) return "tick " + input;
+//                    throw new RuntimeException("boom");
+//                })
+//                .retry(1)
+//                .elapsed()
+//                .subscribe(System.out::println, System.err::println);
+//
+//        Flux<String> flux = Flux
+//                .<String>error(new IllegalArgumentException())
+//                .doOnError(System.out::println)
+//                .retryWhen(Retry.from(companion -> companion.take(3)));
+//
+//
+//        AtomicInteger errorCount = new AtomicInteger();
+//
+//        Flux.error(new IllegalArgumentException())
+//                .doOnError(e -> errorCount.incrementAndGet())
+//                .retryWhen(Retry.from(companion -> companion.map(rs -> {
+//                    if (rs.totalRetries() < 3) return rs.totalRetries();
+//                    else return Exceptions.propagate(rs.failure());
+//                })));
+//
+//
+//        AtomicInteger eC = new AtomicInteger();
+//        AtomicInteger transientHelper = new AtomicInteger();
+//        Flux<Integer> transientFlux = Flux.<Integer>generate(sink -> {
+//            int i = transientHelper.incrementAndGet();
+//
+//            if (i == 10) {
+//                sink.next(i);
+//                sink.complete();
+//            } else if (i % 3 == 0) {
+//                sink.next(i);
+//            } else {
+//                sink.error(new IllegalArgumentException("Transient error at : " + i));
+//            }
+//        })
+//                .doOnError(e -> eC.incrementAndGet());
+//        transientFlux.retryWhen(Retry.max(2).transientErrors(true))
+//                .blockLast();
 
     }
-    public static class SimpleSubscriber<T> extends BaseSubscriber<T> {
-        @Override
-        protected void hookOnSubscribe(Subscription subscription) {
-            System.out.println("subscribed");
-            request(1);
-        }
-
-        @Override
-        protected void hookOnNext(T value) {
-            System.out.println(value);
-            request(1);
-        }
-
-        @Override
-        protected void hookOnComplete() {
-            System.out.println("onComplete");
-        }
-    }
-
 }
+
+
