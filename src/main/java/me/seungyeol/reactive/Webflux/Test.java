@@ -5,6 +5,7 @@ import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
@@ -17,13 +18,21 @@ public class Test {
     public static Flux<String> temp(String s) {
         return Flux.just(s);
     }
+    public static String toLowerCase(String s){
+        try {
+            Thread.sleep(5000L);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return s;
+    }
     public static void main(String[] args) throws InterruptedException {
 
 
         for(int i=0; i< 10; ++i) {
             temp("HI" + i)
                     .publishOn(Schedulers.boundedElastic())
-                    .map(String::toLowerCase)
+                    .map(Test::toLowerCase)
                     .log()
                     .subscribe(s -> System.out.println());
         }
